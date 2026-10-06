@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Password Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0E2B2E;
+    --paper:#CFEDEE;
+    --panel:#FFFFFF;
+    --rule:#9FCBCC;
+    --muted:#4C7274;
+    --brass:#9A6B1F;
+    --sea:#2F6B5E;
+    --alarm:#A33A2A;
+    --shadow:rgba(27,26,23,.14);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#DCEEEE;
+      --paper:#0E2426;
+      --panel:#123033;
+      --rule:#2C4F52;
+      --muted:#7FA8AA;
+      --brass:#D8A44B;
+      --sea:#6FC0A8;
+      --alarm:#E0705C;
+      --shadow:rgba(0,0,0,.45);
+    }
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    font-size:16px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:660px;margin:0 auto;padding:40px 20px 64px}
+
+  header{text-align:center}
+  header .kicker{
+    margin:0 0 10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    font-size:clamp(1.1rem,3.6vw,1.4rem);
+    color:#000;
+  }
+  header h1{
+    font-family:"Fraunces", Georgia, serif;
+    font-weight:700;
+    font-size:clamp(2rem,6vw,3rem);
+    line-height:1.05;
+    margin:0 0 .3em;
+    letter-spacing:-.02em;
+  }
+  header p{margin:0 auto;color:var(--muted);max-width:52ch}
+  header .stack{margin-top:10px;font-size:.8rem;color:var(--muted)}
+
+  .vault{
+    margin:28px 0 0;
+    background:var(--panel);
+    border:1px solid var(--rule);
+    border-radius:14px;
+    box-shadow:0 10px 30px -18px var(--shadow);
+    overflow:hidden;
+  }
+
+  .readout{padding:22px 20px 18px;border-bottom:1px dashed var(--rule)}
+  #password{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:clamp(1.05rem,4.2vw,1.55rem);
+    font-weight:600;
+    word-break:break-all;
+    line-height:1.4;
+    min-height:1.4em;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  #password.placeholder{color:var(--muted);font-weight:400}
+
+  .meter{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .bars{display:flex;gap:4px}
+  .bars i{width:34px;height:6px;border-radius:3px;background:var(--rule);transition:background .2s}
+  .bars i.on{background:var(--level)}
+  .meter b{font-weight:600;font-size:.9rem;color:var(--level)}
+  .meter span{font-size:.85rem;color:var(--muted)}
+
+  .controls{padding:20px}
+  .row{margin-bottom:22px}
+  .row:last-child{margin-bottom:0}
+  .row > label{display:flex;justify-content:space-between;align-items:baseline;font-weight:500;margin-bottom:10px}
+  .row > label output{font-family:"IBM Plex Mono", monospace;font-size:1.25rem;font-weight:600;color:var(--brass)}
+
+  .thermo{display:flex;align-items:center;gap:12px}
+  .thermo button{
+    flex:0 0 auto;width:42px;height:42px;padding:0;border-radius:50%;
+    font-size:1.3rem;line-height:1;display:flex;align-items:center;justify-content:center;
+    color:var(--ink);
+  }
+  .thermo button:hover:not(:disabled){border-color:var(--brass);color:var(--brass)}
+  .thermo button:disabled{opacity:.35;cursor:not-allowed}
+
+  .tube{
+    position:relative;flex:1 1 auto;height:22px;border:1px solid var(--rule);
+    border-radius:11px;background:var(--paper);overflow:hidden;cursor:pointer;
+  }
+  .tube:focus-visible{outline:3px solid var(--sea);outline-offset:3px}
+  .bulb{position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--brass);z-index:2}
+  .mercury{position:absolute;left:9px;top:6px;height:10px;border-radius:5px;background:var(--brass);width:0;transition:width .18s ease}
+  .ticks{position:absolute;left:22px;right:8px;top:0;bottom:0;display:flex;pointer-events:none}
+  .ticks i{flex:1 1 0;border-right:1px solid var(--rule);opacity:.45}
+  .ticks i:last-child{border-right:0}
+
+  .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+  .opt{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--rule);border-radius:9px;cursor:pointer;font-size:.95rem}
+  .opt:hover{border-color:var(--brass)}
+  .opt input{accent-color:var(--brass);width:17px;height:17px;margin:0;cursor:pointer}
+  .opt code{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--muted);margin-left:auto}
+
+  .actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+  button{
+    font:inherit;font-weight:600;border-radius:9px;padding:13px 20px;cursor:pointer;
+    border:1px solid var(--rule);background:transparent;color:var(--ink);transition:transform .08s ease;
+  }
+  button:active{transform:translateY(1px)}
+  #make{flex:1 1 220px;background:var(--brass);border-color:var(--brass);color:#fff}
+  @media (prefers-color-scheme: dark){ #make{color:#0E2426} }
+  #copy{flex:0 0 auto;min-width:110px}
+  button:focus-visible{outline:3px solid var(--sea);outline-offset:2px}
+  .opt:focus-within{outline:3px solid var(--sea);outline-offset:2px}
+
+  .note{margin-top:8px;font-size:.85rem;color:var(--alarm);min-height:1.2em}
+  footer{margin-top:24px;font-size:.85rem;color:var(--muted)}
+  footer p{margin:.4em 0}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="kicker">PASSWORD GENERATOR</p>
+    <h1>Make a password<br>worth keeping.</h1>
+    <p>Pick a length, choose what goes in it, and generate. A Python backend does the generating — the browser only shows the result.</p>
+    <p class="stack">Flask + Python <code>secrets</code> module</p>
+  </header>
+
+  <main class="vault">
+    <div class="readout">
+      <p id="password" class="placeholder">Your password will appear here</p>
+      <div class="meter" id="meter" style="--level:var(--muted)">
+        <span class="bars"><i></i><i></i><i></i><i></i></span>
+        <b id="verdict">—</b>
+        <span id="detail"></span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="row">
+        <label id="lenLabel">Length <output id="lenOut">16</output></label>
+        <div class="thermo">
+          <button type="button" id="minus" aria-label="Decrease length">&minus;</button>
+          <div class="tube" id="tube" role="slider" tabindex="0"
+               aria-labelledby="lenLabel" aria-valuemin="4" aria-valuemax="64" aria-valuenow="16">
+            <span class="bulb"></span>
+            <span class="mercury" id="mercury"></span>
+            <span class="ticks" id="ticks"></span>
+          </div>
+          <button type="button" id="plus" aria-label="Increase length">+</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <label id="charLabel">Characters to include</label>
+        <div class="opts" role="group" aria-labelledby="charLabel">
+          <label class="opt"><input type="checkbox" id="lower" checked> Lowercase <code>a–z</code></label>
+          <label class="opt"><input type="checkbox" id="upper" checked> Uppercase <code>A–Z</code></label>
+          <label class="opt"><input type="checkbox" id="digits" checked> Numbers <code>0–9</code></label>
+          <label class="opt"><input type="checkbox" id="symbols" checked> Symbols <code>!@#$</code></label>
+          <label class="opt"><input type="checkbox" id="noLook"> Skip lookalikes <code>0O1lI</code></label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="make" type="button">Generate password</button>
+        <button id="copy" type="button">Copy</button>
+      </div>
+      <p class="note" id="note" role="status"></p>
+    </div>
+  </main>
+
+  <footer>
+    <p>Strength is rated on how many character types the password actually uses and how much of it is repeated — not on length alone.</p>
+    <p>A password you can't remember needs somewhere safe to live — use a password manager rather than a sticky note.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var lenOut = $("lenOut"), pwEl = $("password"),
+      note = $("note"), meter = $("meter"), verdict = $("verdict"),
+      detail = $("detail"), bars = meter.querySelectorAll("i");
+
+  var boxes = ["lower","upper","digits","symbols"];
+  var MIN = 4, MAX = 64, length = 16;
+
+  function setLength(n){
+    length = Math.max(MIN, Math.min(MAX, n));
+    lenOut.textContent = length;
+    var pct = (length - MIN) / (MAX - MIN);
+    $("mercury").style.width = "calc(" + (pct * 100) + "% - " + (pct * 26) + "px + 12px)";
+    $("minus").disabled = length === MIN;
+    $("plus").disabled = length === MAX;
+    $("tube").setAttribute("aria-valuenow", length);
+    $("tube").setAttribute("aria-valuetext", length + " characters");
+  }
+
+  function render(pw){
+    pwEl.classList.remove("placeholder");
+    pwEl.textContent = pw;
+  }
+
+  function applyStrength(s){
+    meter.style.setProperty("--level",
+      s.level === 1 ? "var(--alarm)" : s.level === 2 ? "var(--brass)" : "var(--sea)");
+    verdict.textContent = s.label;
+    detail.textContent = "· " + s.categories + " of 4 character types · " +
+      s.unique_count + "/" + s.length + " characters unique";
+    bars.forEach(function(b, i){ b.classList.toggle("on", i < s.level); });
+  }
+
+  function selectedTypes(){
+    var picked = {};
+    boxes.forEach(function(k){ picked[k] = $(k).checked; });
+    return picked;
+  }
+
+  // Talks to the Python backend: POSTs the chosen settings, gets back a
+  // password and its strength rating computed entirely in Python.
+  function generate(){
+    var body = Object.assign({ length: length, noLookalikes: $("noLook").checked }, selectedTypes());
+
+    fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+      .then(function(res){ return res.json().then(function(data){ return { ok: res.ok, data: data }; }); })
+      .then(function(result){
+        if(!result.ok){
+          note.textContent = result.data.error || "Something went wrong.";
+          return;
+        }
+        note.textContent = "";
+        render(result.data.password);
+        applyStrength(result.data.strength);
+      })
+      .catch(function(){
+        note.textContent = "Couldn't reach the server. Is app.py running?";
+      });
+  }
+
+  for(var t = 0; t < 12; t++) $("ticks").appendChild(document.createElement("i"));
+
+  $("minus").addEventListener("click", function(){ setLength(length - 1); generate(); });
+  $("plus").addEventListener("click", function(){ setLength(length + 1); generate(); });
+
+  $("tube").addEventListener("click", function(e){
+    var r = this.getBoundingClientRect();
+    var pct = Math.min(1, Math.max(0, (e.clientX - r.left - 12) / (r.width - 24)));
+    setLength(Math.round(MIN + pct * (MAX - MIN)));
+    generate();
+  });
+
+  $("tube").addEventListener("keydown", function(e){
+    var step = 0;
+    if(e.key === "ArrowRight" || e.key === "ArrowUp") step = 1;
+    else if(e.key === "ArrowLeft" || e.key === "ArrowDown") step = -1;
+    else if(e.key === "Home"){ setLength(MIN); generate(); e.preventDefault(); return; }
+    else if(e.key === "End"){ setLength(MAX); generate(); e.preventDefault(); return; }
+    if(step){ setLength(length + step); generate(); e.preventDefault(); }
+  });
+
+  setLength(length);
+
+  $("make").addEventListener("click", generate);
+  boxes.concat(["noLook"]).forEach(function(k){
+    $(k).addEventListener("change", function(){ note.textContent = ""; });
+  });
+
+  $("copy").addEventListener("click", function(){
+    if(pwEl.classList.contains("placeholder")){
+      note.textContent = "Generate a password first, then copy it.";
+      return;
+    }
+    var text = pwEl.textContent, btn = $("copy");
+    var done = function(){ btn.textContent = "Copied"; setTimeout(function(){ btn.textContent = "Copy"; }, 1400); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallback(text, done); });
+    } else { fallback(text, done); }
+  });
+
+  function fallback(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); }
+    catch(e){ note.textContent = "Copying didn't work here — select the password and copy it manually."; }
+    document.body.removeChild(ta);
+  }
+
+  generate();
+})();
+</script>
+</body>
+</html>
